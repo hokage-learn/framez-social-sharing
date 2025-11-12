@@ -13,6 +13,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/AppNavigator';
+
+type OnboardingScreenNavigation = NativeStackNavigationProp<
+  RootStackParamList,
+  'Onboarding'
+>;
 
 // Background images - replace with your own image URLs
 // Using Unsplash placeholders for now - you can replace these with your own images
@@ -164,6 +172,7 @@ export const OnboardingScreen = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList<(typeof SLIDES)[number]>>(null);
   const { width } = useWindowDimensions();
+  const navigation = useNavigation<OnboardingScreenNavigation>();
 
   const viewabilityConfig = useRef({
     viewAreaCoveragePercentThreshold: 60,
@@ -195,8 +204,7 @@ export const OnboardingScreen = () => {
   const handlePrimaryAction = () => {
     const isLastSlide = activeIndex === SLIDES.length - 1;
     if (isLastSlide) {
-      // TODO: replace with navigation to auth flow once implemented
-      handleScrollToIndex(0);
+      navigation.navigate('SignIn');
     } else {
       handleScrollToIndex(activeIndex + 1);
     }
@@ -233,7 +241,7 @@ export const OnboardingScreen = () => {
                     <TouchableOpacity
                       style={styles.skipButton}
                       activeOpacity={0.7}
-                      onPress={() => handleScrollToIndex(SLIDES.length - 1)}
+                      onPress={() => navigation.navigate('SignIn')}
                     >
                       <Text style={styles.skipText}>Skip</Text>
                     </TouchableOpacity>
@@ -281,7 +289,7 @@ export const OnboardingScreen = () => {
                       <TouchableOpacity
                         style={styles.footerLink}
                         activeOpacity={0.6}
-                        onPress={() => handleScrollToIndex(0)}
+                        onPress={() => navigation.navigate('SignIn')}
                       >
                         <Text style={styles.footerLinkText}>
                           Already have an account?
