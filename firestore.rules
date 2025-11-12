@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Posts collection - allow authenticated users to read all posts, create their own
+    match /posts/{postId} {
+      // Anyone authenticated can read posts
+      allow read: if request.auth != null;
+      
+      // Users can create posts (must set their own userId)
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.likes is list
+        && request.resource.data.comments is list;
+      
+      // Users can update their own posts (for likes/comments)
+      allow update: if request.auth != null 
+        && (resource.data.userId == request.auth.uid 
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'comments', 'updatedAt']));
+      
+      // Users can delete their own posts
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Users collection - allow users to read any profile, write only their own
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles
+      allow read: if request.auth != null;
+      
+      // Users can only create/update their own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+

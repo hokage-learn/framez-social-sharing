@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
 import {
   View,
   Text,
@@ -16,34 +17,42 @@ import { useTheme } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { getFirebaseErrorMessage } from '../../utils/firebaseErrors';
 
 type SignInScreenNavigation = NativeStackNavigationProp<
   RootStackParamList,
   'SignIn'
 >;
 
+const SignInSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(6, 'Password must be at least 6 characters')
+    .required('Password is required'),
+});
+
+type SignInFormValues = {
+  email: string;
+  password: string;
+};
+
 export const SignInScreen = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const { signIn } = useAuthStore();
   const { tokens } = useTheme();
   const navigation = useNavigation<SignInScreenNavigation>();
 
-  const handleSignIn = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
+  const handleSignIn = async (values: SignInFormValues, setSubmitting: (isSubmitting: boolean) => void) => {
     try {
-      await signIn(email.trim(), password);
+      await signIn(values.email.trim(), values.password);
       // Navigation will be handled by auth state change
     } catch (error: any) {
-      Alert.alert('Sign In Failed', error.message || 'Invalid credentials');
+      const errorCode = error.code || '';
+      const errorMessage = getFirebaseErrorMessage(errorCode);
+      Alert.alert('Sign In Failed', errorMessage);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -66,80 +75,134 @@ export const SignInScreen = () => {
             </Text>
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                Email
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: tokens.surface,
-                    color: tokens.textPrimary,
-                    borderColor: tokens.border,
-                  },
-                ]}
-                placeholder="Enter your email"
-                placeholderTextColor={tokens.textSecondary}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-            </View>
+          <Formik
+            initialValues={{ email: '', password: '' }}
+            validationSchema={SignInSchema}
+            onSubmit={(values, { setSubmitting }) => {
+              handleSignIn(values, setSubmitting);
+            }}
+          >
+            {({
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              values,
+              errors,
+              touched,
+              isSubmitting,
+            }) => (
+              <View style={styles.form}>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: tokens.textPrimary }]}>
+                    Email
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: tokens.surface,
+                        color: tokens.textPrimary,
+                        borderColor:
+                          touched.email && errors.email
+                            ? '#EF4444'
+                            : tokens.border,
+                      },
+                    ]}
+                    placeholder="Enter your email"
+                    placeholderTextColor={tokens.textSecondary}
+                    value={values.email}
+                    onChangeText={handleChange('email')}
+                    onBlur={handleBlur('email')}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    autoCorrect={false}
+                  />
+                  {touched.email && errors.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  )}
+                </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                Password
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: tokens.surface,
-                    color: tokens.textPrimary,
-                    borderColor: tokens.border,
-                  },
-                ]}
-                placeholder="Enter your password"
-                placeholderTextColor={tokens.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password"
-              />
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: tokens.textPrimary }]}>
+                    Password
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: tokens.surface,
+                        color: tokens.textPrimary,
+                        borderColor:
+                          touched.password && errors.password
+                            ? '#EF4444'
+                            : tokens.border,
+                      },
+                    ]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={tokens.textSecondary}
+                    value={values.password}
+                    onChangeText={handleChange('password')}
+                    onBlur={handleBlur('password')}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    autoCorrect={false}
+                  />
+                  {touched.password && errors.password && (
+                    <Text style={styles.errorText}>{errors.password}</Text>
+                  )}
+                </View>
 
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: tokens.accent }]}
-              onPress={handleSignIn}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.forgotPasswordLink}
+                  onPress={() => navigation.navigate('ForgotPassword')}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[styles.forgotPasswordText, { color: tokens.accent }]}
+                  >
+                    Forgot Password?
+                  </Text>
+                </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: tokens.textSecondary }]}>
-                Don't have an account?{' '}
-              </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('SignUp')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.linkText, { color: tokens.accent }]}>
-                  Sign Up
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: tokens.accent,
+                      opacity: isSubmitting ? 0.6 : 1,
+                    },
+                  ]}
+                  onPress={() => handleSubmit()}
+                  disabled={isSubmitting}
+                  activeOpacity={0.8}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.buttonText}>Sign In</Text>
+                  )}
+                </TouchableOpacity>
+
+                <View style={styles.footer}>
+                  <Text
+                    style={[styles.footerText, { color: tokens.textSecondary }]}
+                  >
+                    Don't have an account?{' '}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('SignUp')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.linkText, { color: tokens.accent }]}>
+                      Sign Up
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </Formik>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -180,6 +243,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+    paddingVertical: 4,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   input: {
     height: 52,

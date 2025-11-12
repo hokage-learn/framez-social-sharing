@@ -34,7 +34,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       );
       set({ user: userCredential.user });
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to sign up');
+      // Preserve Firebase error with code for proper error handling
+      const firebaseError: any = new Error(error.message || 'Failed to sign up');
+      firebaseError.code = error.code;
+      throw firebaseError;
     }
   },
 
@@ -47,7 +50,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       );
       set({ user: userCredential.user });
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to sign in');
+      // Preserve Firebase error with code for proper error handling
+      const firebaseError: any = new Error(error.message || 'Failed to sign in');
+      firebaseError.code = error.code;
+      throw firebaseError;
     }
   },
 

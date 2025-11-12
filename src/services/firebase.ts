@@ -1,6 +1,6 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFirestore, enableNetwork, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 // Firebase config - replace with your Firebase project credentials
@@ -27,6 +27,11 @@ export const auth: Auth = getAuth(app);
 
 // Initialize Firestore
 export const db: Firestore = getFirestore(app);
+
+// Ensure Firestore network is enabled
+enableNetwork(db).catch((err) => {
+  console.warn('Firestore network enable warning:', err);
+});
 
 // Initialize Storage
 export const storage: FirebaseStorage = getStorage(app);

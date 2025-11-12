@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
 import {
   View,
   Text,
@@ -16,46 +17,86 @@ import { useTheme } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { getFirebaseErrorMessage } from '../../utils/firebaseErrors';
+import { updateProfile } from 'firebase/auth';
+import { auth, db } from '../../services/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 type SignUpScreenNavigation = NativeStackNavigationProp<
   RootStackParamList,
   'SignUp'
 >;
 
+const SignUpSchema = Yup.object().shape({
+  username: Yup.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username must be less than 20 characters')
+    .matches(
+      /^[a-zA-Z0-9_]+$/,
+      'Username can only contain letters, numbers, and underscores',
+    )
+    .required('Username is required'),
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(6, 'Password must be at least 6 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    )
+    .required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Please confirm your password'),
+});
+
+type SignUpFormValues = {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export const SignUpScreen = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const { signUp } = useAuthStore();
   const { tokens } = useTheme();
   const navigation = useNavigation<SignUpScreenNavigation>();
 
-  const handleSignUp = async () => {
-    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-
-    setLoading(true);
+  const handleSignUp = async (
+    values: SignUpFormValues,
+    setSubmitting: (isSubmitting: boolean) => void,
+  ) => {
     try {
-      await signUp(email.trim(), password);
+      await signUp(values.email.trim(), values.password);
+      
+      // Save username and user profile to Firestore
+      if (auth.currentUser) {
+        const username = values.username.trim().toLowerCase();
+        
+        // Update Firebase Auth profile
+        await updateProfile(auth.currentUser, {
+          displayName: username,
+        });
+        
+        // Save user document to Firestore with username
+        await setDoc(doc(db, 'users', auth.currentUser.uid), {
+          uid: auth.currentUser.uid,
+          username: username,
+          email: auth.currentUser.email,
+          displayName: username,
+          avatar: auth.currentUser.photoURL || null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
       // Navigation will be handled by auth state change
     } catch (error: any) {
-      Alert.alert('Sign Up Failed', error.message || 'Failed to create account');
+      const errorCode = error.code || '';
+      const errorMessage = getFirebaseErrorMessage(errorCode);
+      Alert.alert('Sign Up Failed', errorMessage);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -78,124 +119,197 @@ export const SignUpScreen = () => {
             </Text>
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                Name
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: tokens.surface,
-                    color: tokens.textPrimary,
-                    borderColor: tokens.border,
-                  },
-                ]}
-                placeholder="Enter your name"
-                placeholderTextColor={tokens.textSecondary}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
-            </View>
+          <Formik
+            initialValues={{
+              username: '',
+              email: '',
+              password: '',
+              confirmPassword: '',
+            }}
+            validationSchema={SignUpSchema}
+            onSubmit={(values, { setSubmitting }) => {
+              handleSignUp(values, setSubmitting);
+            }}
+          >
+            {({
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              values,
+              errors,
+              touched,
+              isSubmitting,
+            }) => (
+              <View style={styles.form}>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: tokens.textPrimary }]}>
+                    Username
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: tokens.surface,
+                        color: tokens.textPrimary,
+                        borderColor:
+                          touched.username && errors.username
+                            ? '#EF4444'
+                            : tokens.border,
+                      },
+                    ]}
+                    placeholder="Choose a username"
+                    placeholderTextColor={tokens.textSecondary}
+                    value={values.username}
+                    onChangeText={handleChange('username')}
+                    onBlur={handleBlur('username')}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  {touched.username && errors.username && (
+                    <Text style={styles.errorText}>{errors.username}</Text>
+                  )}
+                  <Text
+                    style={[
+                      styles.helperText,
+                      { color: tokens.textSecondary },
+                    ]}
+                  >
+                    Letters, numbers, and underscores only (3-20 characters)
+                  </Text>
+                </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                Email
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: tokens.surface,
-                    color: tokens.textPrimary,
-                    borderColor: tokens.border,
-                  },
-                ]}
-                placeholder="Enter your email"
-                placeholderTextColor={tokens.textSecondary}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: tokens.textPrimary }]}>
+                    Email
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: tokens.surface,
+                        color: tokens.textPrimary,
+                        borderColor:
+                          touched.email && errors.email
+                            ? '#EF4444'
+                            : tokens.border,
+                      },
+                    ]}
+                    placeholder="Enter your email"
+                    placeholderTextColor={tokens.textSecondary}
+                    value={values.email}
+                    onChangeText={handleChange('email')}
+                    onBlur={handleBlur('email')}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    autoCorrect={false}
+                  />
+                  {touched.email && errors.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  )}
+                </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                Password
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: tokens.surface,
-                    color: tokens.textPrimary,
-                    borderColor: tokens.border,
-                  },
-                ]}
-                placeholder="Create a password"
-                placeholderTextColor={tokens.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password-new"
-              />
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: tokens.textPrimary }]}>
+                    Password
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: tokens.surface,
+                        color: tokens.textPrimary,
+                        borderColor:
+                          touched.password && errors.password
+                            ? '#EF4444'
+                            : tokens.border,
+                      },
+                    ]}
+                    placeholder="Create a password"
+                    placeholderTextColor={tokens.textSecondary}
+                    value={values.password}
+                    onChangeText={handleChange('password')}
+                    onBlur={handleBlur('password')}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete="password-new"
+                    autoCorrect={false}
+                  />
+                  {touched.password && errors.password && (
+                    <Text style={styles.errorText}>{errors.password}</Text>
+                  )}
+                </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                Confirm Password
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: tokens.surface,
-                    color: tokens.textPrimary,
-                    borderColor: tokens.border,
-                  },
-                ]}
-                placeholder="Confirm your password"
-                placeholderTextColor={tokens.textSecondary}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password-new"
-              />
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: tokens.textPrimary }]}>
+                    Confirm Password
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: tokens.surface,
+                        color: tokens.textPrimary,
+                        borderColor:
+                          touched.confirmPassword && errors.confirmPassword
+                            ? '#EF4444'
+                            : tokens.border,
+                      },
+                    ]}
+                    placeholder="Confirm your password"
+                    placeholderTextColor={tokens.textSecondary}
+                    value={values.confirmPassword}
+                    onChangeText={handleChange('confirmPassword')}
+                    onBlur={handleBlur('confirmPassword')}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete="password-new"
+                    autoCorrect={false}
+                  />
+                  {touched.confirmPassword && errors.confirmPassword && (
+                    <Text style={styles.errorText}>
+                      {errors.confirmPassword}
+                    </Text>
+                  )}
+                </View>
 
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: tokens.accent }]}
-              onPress={handleSignUp}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.buttonText}>Sign Up</Text>
-              )}
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: tokens.accent,
+                      opacity: isSubmitting ? 0.6 : 1,
+                    },
+                  ]}
+                  onPress={() => handleSubmit()}
+                  disabled={isSubmitting}
+                  activeOpacity={0.8}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.buttonText}>Sign Up</Text>
+                  )}
+                </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: tokens.textSecondary }]}>
-                Already have an account?{' '}
-              </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('SignIn')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.linkText, { color: tokens.accent }]}>
-                  Sign In
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <View style={styles.footer}>
+                  <Text
+                    style={[styles.footerText, { color: tokens.textSecondary }]}
+                  >
+                    Already have an account?{' '}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('SignIn')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.linkText, { color: tokens.accent }]}>
+                      Sign In
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </Formik>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -236,6 +350,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   input: {
     height: 52,

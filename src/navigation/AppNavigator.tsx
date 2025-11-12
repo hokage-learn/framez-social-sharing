@@ -14,15 +14,19 @@ import { useAuthStore } from '../state/auth';
 import { OnboardingScreen } from '../screens/onboarding/OnboardingScreen';
 import { SignInScreen } from '../screens/auth/SignInScreen';
 import { SignUpScreen } from '../screens/auth/SignUpScreen';
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
+import { PostDetailScreen } from '../screens/post-detail/PostDetailScreen';
+import { MainTabNavigator } from './MainTabNavigator';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import type { Post } from '../services/posts';
 
 export type RootStackParamList = {
   Onboarding: undefined;
   SignIn: undefined;
   SignUp: undefined;
-  // Main app screens will be added later
-  // Home: undefined;
-  // Profile: undefined;
+  ForgotPassword: undefined;
+  MainTabs: undefined;
+  PostDetail: { post: Post };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,13 +83,23 @@ export const AppNavigator = () => {
     <NavigationContainer theme={theme}>
       <Stack.Navigator
         screenOptions={screenOptions}
-        initialRouteName="Onboarding"
+        initialRouteName={user ? 'MainTabs' : 'Onboarding'}
       >
-        {/* Always register auth screens - navigation will handle access */}
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        {/* Main app screens will be added here when user is authenticated */}
+        {user ? (
+          // Main app screens - user is authenticated
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+          </>
+        ) : (
+          // Auth flow - user is not authenticated
+          <>
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="SignIn" component={SignInScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

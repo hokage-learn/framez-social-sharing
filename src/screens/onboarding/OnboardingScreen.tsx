@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
   },
   slideContainer: {
     flex: 1,
-    width: '100%',
   },
   backgroundImage: {
     flex: 1,
     width: '100%',
+    height: '100%',
     justifyContent: 'space-between',
     backgroundColor: '#1F2937', // Fallback color if image doesn't load
   },
@@ -227,8 +227,9 @@ export const OnboardingScreen = () => {
             <View style={[styles.slideContainer, { width }]}>
               <ImageBackground
                 source={{ uri: item.imageUrl }}
-                style={styles.backgroundImage}
+                style={[styles.backgroundImage, { width }]}
                 resizeMode="cover"
+                imageStyle={{ resizeMode: 'cover' }}
               >
                 {/* Dark overlay gradient for text readability */}
                 <LinearGradient
