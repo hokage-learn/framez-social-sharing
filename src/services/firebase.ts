@@ -14,12 +14,31 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
 };
 
+// Validate Firebase config
+const isConfigValid = 
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId;
+
+if (!isConfigValid) {
+  console.error('Firebase config is missing or incomplete. Please check your environment variables.');
+}
+
 // Initialize Firebase
 let app: FirebaseApp;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+try {
+  if (getApps().length === 0) {
+    if (!isConfigValid) {
+      throw new Error('Firebase configuration is incomplete. Cannot initialize Firebase.');
+    }
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApps()[0];
+  }
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+  throw error;
 }
 
 // Initialize Auth - Firebase handles persistence automatically in React Native

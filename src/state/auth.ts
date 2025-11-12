@@ -71,10 +71,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   setInitialized: (initialized: boolean) => set({ initialized }),
 }));
 
-// Initialize auth state listener
-onAuthStateChanged(auth, (user) => {
-  useAuthStore.getState().setUser(user);
+// Initialize auth state listener with error handling
+try {
+  onAuthStateChanged(
+    auth,
+    (user) => {
+      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setLoading(false);
+      useAuthStore.getState().setInitialized(true);
+    },
+    (error) => {
+      console.error('Auth state change error:', error);
+      useAuthStore.getState().setLoading(false);
+      useAuthStore.getState().setInitialized(true);
+    },
+  );
+} catch (error) {
+  console.error('Failed to initialize auth listener:', error);
   useAuthStore.getState().setLoading(false);
   useAuthStore.getState().setInitialized(true);
-});
+}
 
