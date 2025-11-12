@@ -1,63 +1,69 @@
 # Framez - Social Media Mobile App
 
-A modern, Instagram-inspired social media mobile application built with React Native (Expo) and Firebase.
+A modern, feature-rich social media mobile application built with React Native (Expo) and Firebase. Framez allows users to share posts, interact with content through likes and comments, and manage their profiles.
 
-## 🚀 Features
+## 📱 Features
 
-### ✅ Core Features (Implemented)
+### ✅ Authentication
+- **Sign Up**: Create account with email, password, and username
+- **Sign In**: Secure login with email and password
+- **Logout**: Sign out functionality
+- **Persistent Sessions**: Users remain logged in after app restart
+- **Password Reset**: Forgot password functionality
 
-- **Authentication**
-  - Secure sign-up with username, email, and password validation
-  - Login with email/password
-  - Persistent user sessions (remains logged in after app restart)
-  - Logout functionality
-  - Password reset flow
+### ✅ Posts
+- **Create Posts**: Share text-based posts with the community
+- **Real-time Feed**: View all posts from all users in chronological order
+- **Post Interactions**:
+  - Like/Unlike posts
+  - Add comments
+  - View comment counts
+  - Edit own posts
+  - Delete own posts
+- **Post Details**: Dedicated screen for viewing full post with all comments
+- **Timestamps**: Relative time display (e.g., "2h ago", "Just now")
 
-- **Posts**
-  - Create text-based posts
-  - Real-time feed displaying all posts from all users
-  - Chronological feed (newest first)
-  - Post details with full comment thread
-  - Edit and delete your own posts
-  - Like/unlike posts
-  - Add comments to posts
-  - View comment counts and like counts
+### ✅ Profile
+- **User Profile**: View current user's information
+  - Username
+  - Email
+  - Avatar (if available)
+  - Post count
+  - Comments received on posts
+  - Comments made on other posts
+- **User Posts**: View all posts created by the current user
+- **Post Management**: Edit and delete posts from profile
 
-- **Profile**
-  - View your profile information (username, email, avatar)
-  - Display all posts created by the current user
-  - View post statistics (likes, comments)
-  - View comment activity stats
+### ✅ UI/UX
+- **Dark/Light Theme**: Toggle between themes
+- **Onboarding**: Beautiful onboarding experience with image backgrounds
+- **Banner**: Promotional banner on feed screen
+- **Card Design**: Modern card-based post design with shadows
+- **Drag to Refresh**: Pull to refresh on all screens
+- **Responsive Layout**: Works on both Android and iOS
+- **Safe Area Handling**: Proper support for device notches
 
-- **UI/UX**
-  - Beautiful onboarding experience with image backgrounds
-  - Dark/Light theme support
-  - Smooth navigation with bottom tabs
-  - Drag-to-refresh on all screens
-  - Card-based post design with shadows
-  - Responsive layout for all screen sizes
-  - Safe area handling for notched devices
+## 🛠️ Technologies Used
 
-## 🛠️ Tech Stack
-
-- **Framework**: React Native with Expo (~54.0.23)
+- **Framework**: React Native (Expo ~54.0)
 - **Backend**: Firebase (Authentication, Firestore, Storage)
 - **State Management**: Zustand
 - **Navigation**: React Navigation (Stack & Bottom Tabs)
 - **Styling**: NativeWind (Tailwind CSS for React Native)
 - **Form Handling**: Formik + Yup
 - **Icons**: Expo Vector Icons (Ionicons)
-- **Language**: TypeScript
+- **TypeScript**: Full type safety
 
 ## 📋 Prerequisites
 
+Before you begin, ensure you have the following installed:
 - Node.js (v18 or higher)
 - npm or yarn
 - Expo CLI (`npm install -g expo-cli`)
 - Firebase account
-- iOS Simulator (Mac) or Android Emulator / Physical device
+- Android Studio (for Android) or Xcode (for iOS)
 
-## 🔧 Setup Instructions
+## 🚀 Setup Instructions
 
 ### 1. Clone the Repository
 
@@ -72,15 +78,22 @@ cd framez-social-sharing
 npm install
 ```
 
-### 3. Firebase Configuration
+### 3. Firebase Setup
 
 1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Authentication (Email/Password)
-3. Create a Firestore Database
-4. Get your Firebase config credentials:
-   - Go to Project Settings → General → Your apps
-   - Add a web app if you haven't already
-   - Copy the config object
+2. Enable Authentication:
+   - Go to Authentication → Sign-in method
+   - Enable Email/Password authentication
+3. Create Firestore Database:
+   - Go to Firestore Database
+   - Create database in production mode
+   - Copy the security rules from `firestore.rules` file
+   - Paste them in Firestore → Rules tab and publish
+4. Get Firebase Configuration:
+   - Go to Project Settings → General
+   - Scroll to "Your apps" section
+   - Add a web app or use existing
+   - Copy the Firebase config object
 
 ### 4. Environment Variables
 
@@ -95,156 +108,165 @@ EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
+**Important**: Replace all values with your actual Firebase configuration.
+
 ### 5. Firestore Security Rules
 
-**⚠️ IMPORTANT**: You MUST set up Firestore security rules!
-
-1. Go to Firebase Console → Firestore Database → Rules
-2. Copy the rules from `firestore.rules` file
-3. Paste and publish the rules
+The security rules are already provided in `firestore.rules`. Make sure to:
+1. Copy the content from `firestore.rules`
+2. Go to Firebase Console → Firestore Database → Rules
+3. Paste the rules and click "Publish"
 
 See `FIRESTORE_SETUP.md` for detailed instructions.
 
 ### 6. Run the App
 
 ```bash
-# Start the Expo development server
+# Start the development server
 npm start
 
-# Or run on specific platform
-npm run android  # Android
-npm run ios      # iOS (Mac only)
+# Run on Android
+npm run android
+
+# Run on iOS
+npm run ios
+
+# Run on web (for testing)
+npm run web
 ```
 
-### 7. Test on Device
-
-- **Expo Go**: Install Expo Go app on your phone and scan the QR code
-- **Simulator/Emulator**: Press `i` for iOS or `a` for Android in the terminal
-
-## 📱 App Structure
+## 📁 Project Structure
 
 ```
-src/
-├── navigation/          # Navigation setup
-│   ├── AppNavigator.tsx  # Main navigation (auth + app)
-│   └── MainTabNavigator.tsx  # Bottom tab navigation
-├── screens/
-│   ├── auth/            # Authentication screens
-│   ├── feed/            # Feed screen
-│   ├── create-post/     # Create post screen
-│   ├── profile/         # Profile screen
-│   ├── post-detail/     # Post detail screen
-│   └── onboarding/      # Onboarding screens
-├── services/            # Firebase services
-│   ├── firebase.ts      # Firebase initialization
-│   ├── posts.ts         # Post operations
-│   └── users.ts         # User operations
-├── state/               # State management
-│   └── auth.ts          # Auth state (Zustand)
-├── theme/               # Theme management
-└── utils/               # Utility functions
+framez-social-sharing/
+├── src/
+│   ├── navigation/          # Navigation configuration
+│   │   ├── AppNavigator.tsx # Main navigation stack
+│   │   └── MainTabNavigator.tsx # Bottom tab navigation
+│   ├── screens/              # Screen components
+│   │   ├── auth/            # Authentication screens
+│   │   ├── feed/             # Feed screen
+│   │   ├── profile/          # Profile screen
+│   │   ├── create-post/      # Create post screen
+│   │   ├── post-detail/      # Post detail screen
+│   │   └── onboarding/       # Onboarding screens
+│   ├── services/             # Backend services
+│   │   ├── firebase.ts      # Firebase initialization
+│   │   ├── posts.ts         # Post operations
+│   │   └── users.ts         # User operations
+│   ├── state/               # State management
+│   │   └── auth.ts          # Authentication state (Zustand)
+│   ├── theme/               # Theme configuration
+│   └── utils/               # Utility functions
+├── assets/                   # Images and static assets
+├── App.tsx                   # Root component
+├── firestore.rules          # Firestore security rules
+└── package.json             # Dependencies
 ```
-
-## 🎨 Design Features
-
-- **Instagram-inspired UI**: Clean, modern interface
-- **Card-based posts**: Posts displayed as cards with shadows
-- **Banner carousel**: Promotional banner at top of feed
-- **Smooth animations**: Fade transitions and smooth scrolling
-- **Theme support**: Automatic dark/light mode based on system preference
 
 ## 🔐 Security
 
-- Firestore security rules enforce:
-  - Users can only create/update/delete their own posts
-  - All authenticated users can read posts
-  - User profiles are readable by all, writable only by owner
+- Firestore security rules ensure users can only:
+  - Read all posts
+  - Create posts with their own userId
+  - Update posts (for likes/comments)
+  - Delete only their own posts
+  - Read any user profile
+  - Create/update only their own profile
 
-## 📝 Key Features Explained
+## 📱 Testing
 
-### Real-time Updates
-All posts, comments, and likes update in real-time using Firestore's `onSnapshot` listeners.
+### Using Expo Go
+1. Install Expo Go app on your device
+2. Scan the QR code from `npm start`
+3. The app will load on your device
 
-### Persistent Sessions
-Firebase Authentication automatically handles session persistence. Users remain logged in after closing and reopening the app.
+### Using Simulators
+- **Android**: Use Android Studio emulator
+- **iOS**: Use Xcode simulator (Mac only)
 
-### Post Interactions
-- **Likes**: Tap the heart icon to like/unlike
-- **Comments**: Add comments directly from the feed or post detail page
-- **Edit/Delete**: Own posts can be edited or deleted from the post detail page
+## 🚢 Deployment
 
-## 🐛 Troubleshooting
+### For Appetize.io
+1. Build the app for web or create a standalone build
+2. Upload to Appetize.io following their documentation
+3. Share the public link
 
-### Posts not loading?
-- Check Firestore security rules are published
-- Verify Firebase config in `.env`
-- Ensure you're authenticated
-
-### Authentication not working?
-- Verify Firebase Authentication is enabled
-- Check email/password provider is enabled in Firebase Console
-- Verify `.env` file has correct credentials
-
-### Icons not showing?
-- Icons use Expo Vector Icons (Ionicons) - should work out of the box
-- If issues persist, try clearing cache: `expo start -c`
-
-## 📦 Deployment
-
-### Expo Go (Testing)
-1. Run `npm start`
-2. Scan QR code with Expo Go app
-
-### Appetize.io (Web Demo)
-1. Build the app: `expo build:web` or use EAS Build
-2. Upload to Appetize.io for web-based demo
-
-### Production Build
+### Building Standalone Apps
 ```bash
-# Install EAS CLI
-npm install -g eas-cli
-
-# Configure EAS
-eas build:configure
-
-# Build for production
+# Android
 eas build --platform android
+
+# iOS
 eas build --platform ios
 ```
 
+## 🎯 Key Features Implementation
+
+### Real-time Updates
+- Uses Firestore `onSnapshot` for real-time post updates
+- Comments and likes update instantly across all users
+
+### State Management
+- Zustand for lightweight, performant state management
+- Firebase Auth persistence handles session management
+
+### Navigation
+- Stack navigation for auth flow
+- Bottom tab navigation for main app
+- Proper deep linking support
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Firebase Connection Errors**
+   - Verify `.env` file has correct values
+   - Check Firebase project is active
+   - Ensure Firestore is enabled
+
+2. **Posts Not Showing**
+   - Check Firestore security rules are published
+   - Verify user is authenticated
+   - Check browser/device console for errors
+
+3. **Build Errors**
+   - Clear cache: `expo start -c`
+   - Delete `node_modules` and reinstall
+   - Check Node.js version compatibility
+
+## 📝 Notes
+
+- Image upload for posts was intentionally removed (text-only posts)
+- Username validation: 3-20 characters, alphanumeric and underscores only
+- Password requirements: Minimum 6 characters with uppercase, lowercase, and number
+
+## 👨‍💻 Development
+
+### Code Style
+- TypeScript for type safety
+- Functional components with hooks
+- Clean component structure
+- Proper error handling
+
+### Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
 ## 📄 License
 
-This project is part of the HNG-13 internship program.
+This project is part of HNG-13 Stage 3 submission.
 
-## 👤 Author
+## 🙏 Acknowledgments
 
-Built as part of HNG-13 Stage 3 Task
-
-## 🎯 Acceptance Criteria Status
-
-- ✅ User can register, log in, and log out successfully
-- ✅ Auth session persists on app restart
-- ✅ User can create new posts
-- ✅ Posts display correctly in a feed
-- ✅ User's profile displays correctly with their posts
-- ✅ Smooth navigation and responsive layout
-- ✅ App runs without errors on Android and iOS (tested)
-
-## 📸 Screenshots
-
-*Add screenshots of your app here*
-
-## 🎥 Demo Video
-
-*Link to your 2-3 minute demo video here*
-
-## 🔗 Links
-
-- **GitHub Repository**: [Your Repo URL]
-- **Appetize.io Demo**: [Your Appetize Link]
-- **Demo Video**: [Your Video Link]
+- Firebase for backend services
+- Expo for React Native tooling
+- React Navigation for navigation
+- NativeWind for styling
 
 ---
 
-**Note**: Make sure to set up Firebase and Firestore security rules before running the app!
+**Built with ❤️ for HNG-13**
 

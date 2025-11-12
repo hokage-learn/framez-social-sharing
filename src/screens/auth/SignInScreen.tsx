@@ -25,28 +25,16 @@ type SignInScreenNavigation = NativeStackNavigationProp<
 >;
 
 const SignInSchema = Yup.object().shape({
-  emailOrUsername: Yup.string()
-    .required('Email or username is required')
-    .test(
-      'is-email-or-username',
-      'Invalid email address or username',
-      (value) => {
-        if (!value) return false;
-        // If it contains @, validate as email, otherwise accept as username
-        if (value.includes('@')) {
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-        }
-        // Username validation: 3-20 chars, alphanumeric and underscores
-        return /^[a-zA-Z0-9_]{3,20}$/.test(value);
-      }
-    ),
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
   password: Yup.string()
     .min(6, 'Password must be at least 6 characters')
     .required('Password is required'),
 });
 
 type SignInFormValues = {
-  emailOrUsername: string;
+  email: string;
   password: string;
 };
 
@@ -57,7 +45,7 @@ export const SignInScreen = () => {
 
   const handleSignIn = async (values: SignInFormValues, setSubmitting: (isSubmitting: boolean) => void) => {
     try {
-      await signIn(values.emailOrUsername.trim(), values.password);
+      await signIn(values.email.trim(), values.password);
       // Navigation will be handled by auth state change
     } catch (error: any) {
       const errorCode = error.code || '';
@@ -88,7 +76,7 @@ export const SignInScreen = () => {
           </View>
 
           <Formik
-            initialValues={{ emailOrUsername: '', password: '' }}
+            initialValues={{ email: '', password: '' }}
             validationSchema={SignInSchema}
             onSubmit={(values, { setSubmitting }) => {
               handleSignIn(values, setSubmitting);
@@ -106,7 +94,7 @@ export const SignInScreen = () => {
               <View style={styles.form}>
                 <View style={styles.inputContainer}>
                   <Text style={[styles.label, { color: tokens.textPrimary }]}>
-                    Email or Username
+                    Email
                   </Text>
                   <TextInput
                     style={[
@@ -115,23 +103,23 @@ export const SignInScreen = () => {
                         backgroundColor: tokens.surface,
                         color: tokens.textPrimary,
                         borderColor:
-                          touched.emailOrUsername && errors.emailOrUsername
+                          touched.email && errors.email
                             ? '#EF4444'
                             : tokens.border,
                       },
                     ]}
-                    placeholder="Enter your email or username"
+                    placeholder="Enter your email"
                     placeholderTextColor={tokens.textSecondary}
-                    value={values.emailOrUsername}
-                    onChangeText={handleChange('emailOrUsername')}
-                    onBlur={handleBlur('emailOrUsername')}
-                    keyboardType="default"
+                    value={values.email}
+                    onChangeText={handleChange('email')}
+                    onBlur={handleBlur('email')}
+                    keyboardType="email-address"
                     autoCapitalize="none"
-                    autoComplete="username"
+                    autoComplete="email"
                     autoCorrect={false}
                   />
-                  {touched.emailOrUsername && errors.emailOrUsername && (
-                    <Text style={styles.errorText}>{errors.emailOrUsername}</Text>
+                  {touched.email && errors.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
                   )}
                 </View>
 

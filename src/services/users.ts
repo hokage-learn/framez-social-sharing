@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, query, where, getDocs, type Firestore } from 'firebase/firestore';
+import { doc, getDoc, type Firestore } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from 'firebase/auth';
 
@@ -49,30 +49,5 @@ export const getUsername = async (user: User): Promise<string> => {
   
   // Fallback to displayName or email
   return user.displayName || user.email?.split('@')[0] || 'Anonymous';
-};
-
-/**
- * Get user email by username
- * Used for username-based login
- */
-export const getUserEmailByUsername = async (username: string): Promise<string | null> => {
-  try {
-    const normalizedUsername = username.trim().toLowerCase();
-    const q = query(
-      collection(db, 'users'),
-      where('username', '==', normalizedUsername),
-    );
-    
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      const userDoc = querySnapshot.docs[0];
-      const data = userDoc.data();
-      return data.email || null;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching user email by username:', error);
-    return null;
-  }
 };
 
