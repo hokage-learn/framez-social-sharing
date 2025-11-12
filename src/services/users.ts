@@ -61,7 +61,6 @@ export const getUserEmailByUsername = async (username: string): Promise<string |
     const q = query(
       collection(db, 'users'),
       where('username', '==', normalizedUsername),
-      where('email', '!=', null),
     );
     
     const querySnapshot = await getDocs(q);

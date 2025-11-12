@@ -7,6 +7,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
+import { getUserEmailByUsername } from '../services/users';
 
 type AuthState = {
   user: User | null;
@@ -41,8 +42,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  signIn: async (email: string, password: string) => {
+  signIn: async (emailOrUsername: string, password: string) => {
     try {
+      let email = emailOrUsername.trim();
+      
+      // Check if input is an email (contains @) or username
+      const isEmail = email.includes('@');
+      
+      if (!isEmail) {
+        // It's a username, look up the email
+        const userEmail = await getUserEmailByUsername(email);
+        if (!userEmail) {
+          const error: any = new Error('User not found. Please check your username.');
+          error.code = 'auth/user-not-found';
+          throw error;
+        }
+        email = userEmail;
+      }
+      
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
